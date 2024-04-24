@@ -1,0 +1,40 @@
+//=======================================================================================================
+//
+//
+// AngryBots - Unity 2022 LTS
+//
+// AngryBots2: https://github.com/UnityTechnologies/AngryBots2
+// (Cinemachine Camera Follow, New Shadergraph Materials)
+//
+//=======================================================================================================
+
+//=======================================================================================================
+
+- Cambiados materiales de AngryBots por materiales Standard
+- Quitados efectos de lluvia (Legacy)
+- Convertidos scripts a C#
+- Convertidas las particulas Legacy a Shuriken. Importadas 4 particulas de AngryBots 2.
+- Player pasado a Mecanim (usados scripts de AngryBots 2)
+- MoodBoxes y el Bloom de la camara.
+- GlowPlanes y su script. Se esta usando el GLOW de la camara en vez del postprocessing.
+- Fog en el Plano de Main Camera (un invento cojonudo)
+- EndOfLevel en la escena Escape
+- Problema: lluvia y sus salpicaduras.
+- End Of level
+- DemoControlv2. Para controlar la Pausa, Mute, demas.
+- Actualizados menus a UIs modernas (quitandos los OnGUI)
+- Menu Pausa-> CameraFollowController -> Añadido la visibilidad del cursor en pantalla. Lin 150.
+- GameScore: Añadido numKills total y debug.LOg para hacer entender el diccionario de kills conseguidos.
+- GameScore: Añadido reset para poder Recargar la partida.
+- DemoControlv2 y GameScore son Persistent Singletons.
+
+
+Objeto de estudio:
+- SendSignal / DelayedUnityEvent / UnityEvent
+- Cambiado Health en el Player.
+- Cambiado PlaySound en HitSound, DeadSound del Player
+- Cambiado SpawnAtCheckpoint en el Player.
+
+
+
+//=======================================================================================================

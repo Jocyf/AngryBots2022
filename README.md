@@ -20,7 +20,7 @@ Reflections probes, lightmapping and PotsProcessing has been used  to get an upd
 
 Player is updated to shuriken.
 
-Some assets hans been used from the unity's project: https://github.com/Jocyf/AngryBots2022
+Some assets hans been used from the unity's project: https://github.com/UnityTechnologies/AngryBots2
 
 
 You can see this Unity version running in here: https://youtu.be/PGDx0P-nK1o

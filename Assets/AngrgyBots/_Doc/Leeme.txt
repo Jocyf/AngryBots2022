@@ -38,3 +38,7 @@ Objeto de estudio:
 
 
 //=======================================================================================================
+
+v2.
+- Actualizado MoodBoxManager. Ahora se chequean los valores antes de asignarlos siempre en el Update
+- Actualizado MoodBoxManager. Añadida asignacion del Blomm al PostProceso (Glow) además de al MobileBloom de la camara.

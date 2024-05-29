@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.Rendering.PostProcessing;
 
 [System.Serializable]
 // about the MoodBox (tm) system
@@ -16,6 +17,7 @@ public partial class MoodBoxManager : MonoBehaviour
     public static MoodBox current;
     public MoodBoxData currentData;
     public MobileBloom bloom;
+    public PostProcessVolume postProcessVolume;
     public ColoredNoise noise;
     public RenderFogPlane fog;
     public MoodBox startMoodBox;
@@ -23,95 +25,117 @@ public partial class MoodBoxManager : MonoBehaviour
     public Material[] playerReflectionMaterials;
     public bool applyNearestMoodBox;
     public MoodBox currentMoodBox;
-    [UnityEngine.HideInInspector]
+    [HideInInspector]
     public GameObject[] splashManagers;
-    [UnityEngine.HideInInspector]
+    [HideInInspector]
     public GameObject[] rainManagers;
+
+    private Bloom bloomPostProcess;
+    private ColorParameter colorParameter;
+
+    private Renderer fogRenderer;   // Cache del renderer para no llamar al getComponent cada Update()
+    private float previousFogY = 0f;    // Valor del fogY para para las asignaciones a los valores del shader.
+
+
     public virtual void Awake()
     {
         // mood boxes have the power to disable expensive effects when it makes sense
-        this.splashManagers = GameObject.FindGameObjectsWithTag("RainSplashManager");
-        this.rainManagers = GameObject.FindGameObjectsWithTag("RainBoxManager");
+       splashManagers = GameObject.FindGameObjectsWithTag("RainSplashManager");
+       rainManagers = GameObject.FindGameObjectsWithTag("RainBoxManager");
     }
 
     public virtual void Start()
     {
-        if (!this.bloom)
+        if (!bloom)
         {
-            this.bloom = Camera.main.gameObject.GetComponent<MobileBloom>();
+            bloom = Camera.main.gameObject.GetComponent<MobileBloom>();
         }
-        if (!this.noise)
+        if (!noise)
         {
-            this.noise = Camera.main.gameObject.GetComponent<ColoredNoise>();
+            noise = Camera.main.gameObject.GetComponent<ColoredNoise>();
         }
-        if (!this.fog)
+        if (!fog)
         {
-            this.fog = Camera.main.gameObject.GetComponentInChildren<RenderFogPlane>();
+            fog = Camera.main.gameObject.GetComponentInChildren<RenderFogPlane>();
         }
-        MoodBoxManager.current = this.startMoodBox;
-        this.UpdateFromMoodBox();
+
+        if (!fogRenderer)
+        {
+            fogRenderer = fog.GetComponent<Renderer>();
+        }
+
+        bloomPostProcess = postProcessVolume.profile.GetSetting<UnityEngine.Rendering.PostProcessing.Bloom>();   /**/
+        colorParameter = new UnityEngine.Rendering.PostProcessing.ColorParameter();
+
+        MoodBoxManager.current = startMoodBox;
+        UpdateFromMoodBox();
     }
 
     public virtual void Update()
     {
-        this.UpdateFromMoodBox();
+        UpdateFromMoodBox();
     }
 
     public virtual MoodBoxData GetData()
     {
-        return this.currentData;
+        return currentData;
     }
 
     public virtual void UpdateFromMoodBox()
     {
-        this.ApplyNearestMoodBoxIfDesired();
+        ApplyNearestMoodBoxIfDesired();
+
         // we want to see what the current mood box is in the editor
-        this.currentMoodBox = MoodBoxManager.current;
+        currentMoodBox = MoodBoxManager.current;
         if (MoodBoxManager.current)
         {
             if (!Application.isPlaying)
             {
-                this.currentData.noiseAmount = MoodBoxManager.current.data.noiseAmount;
-                this.currentData.colorMixBlend = MoodBoxManager.current.data.colorMixBlend;
-                this.currentData.colorMix = MoodBoxManager.current.data.colorMix;
-                this.currentData.fogY = MoodBoxManager.current.data.fogY;
-                this.currentData.fogColor = MoodBoxManager.current.data.fogColor;
-                this.currentData.outside = MoodBoxManager.current.data.outside;
+                currentData.noiseAmount = MoodBoxManager.current.data.noiseAmount;
+                currentData.colorMixBlend = MoodBoxManager.current.data.colorMixBlend;
+                currentData.colorMix = MoodBoxManager.current.data.colorMix;
+                currentData.fogY = MoodBoxManager.current.data.fogY;
+                currentData.fogColor = MoodBoxManager.current.data.fogColor;
+                currentData.outside = MoodBoxManager.current.data.outside;
             }
             else
             {
                 // play mode, interpolate nicely
-                this.currentData.noiseAmount = Mathf.Lerp(this.currentData.noiseAmount, MoodBoxManager.current.data.noiseAmount, Time.deltaTime);
-                this.currentData.colorMixBlend = Mathf.Lerp(this.currentData.colorMixBlend, MoodBoxManager.current.data.colorMixBlend, Time.deltaTime);
-                this.currentData.colorMix = Color.Lerp(this.currentData.colorMix, MoodBoxManager.current.data.colorMix, Time.deltaTime);
-                this.currentData.fogY = Mathf.Lerp(this.currentData.fogY, MoodBoxManager.current.data.fogY, Time.deltaTime * 1.5f);
-                this.currentData.fogColor = Color.Lerp(this.currentData.fogColor, MoodBoxManager.current.data.fogColor, Time.deltaTime * 0.25f);
-                this.currentData.outside = MoodBoxManager.current.data.outside;
+                currentData.noiseAmount = Mathf.Lerp(currentData.noiseAmount, MoodBoxManager.current.data.noiseAmount, Time.deltaTime);
+                currentData.colorMixBlend = Mathf.Lerp(currentData.colorMixBlend, MoodBoxManager.current.data.colorMixBlend, Time.deltaTime);
+                currentData.colorMix = Color.Lerp(currentData.colorMix, MoodBoxManager.current.data.colorMix, Time.deltaTime);
+                currentData.fogY = Mathf.Lerp(currentData.fogY, MoodBoxManager.current.data.fogY, Time.deltaTime * 1.5f);
+                currentData.fogColor = Color.Lerp(currentData.fogColor, MoodBoxManager.current.data.fogColor, Time.deltaTime * 0.25f);
+                currentData.outside = MoodBoxManager.current.data.outside;
             }
         }
         // apply new mood and effect values to actual effects (if in use)
-        if (this.bloom && this.bloom.enabled)
+        if ((bloom && bloom.enabled && bloom.colorMix != currentData.colorMix) || (bloomPostProcess !=null))
         {
-            this.bloom.colorMix = this.currentData.colorMix;
-            this.bloom.colorMixBlend = this.currentData.colorMixBlend;
+            bloom.colorMix = currentData.colorMix;
+            bloom.colorMixBlend = currentData.colorMixBlend;
+
+            colorParameter.value = currentData.colorMix;
+            bloomPostProcess.color.Override(colorParameter); /**/
         }
-        if (this.noise && this.noise.enabled)
+        if (noise && noise.enabled && noise.localNoiseAmount != currentData.noiseAmount)
         {
-            this.noise.localNoiseAmount = this.currentData.noiseAmount;
+            noise.localNoiseAmount = currentData.noiseAmount;
         }
-        if (this.fog && this.fog.enabled)
+        if (fog && fog.enabled && previousFogY != currentData.fogY) /**/
         {
-            this.fog.GetComponent<Renderer>().sharedMaterial.SetFloat("_Y", this.currentData.fogY);
-            this.fog.GetComponent<Renderer>().sharedMaterial.SetColor("_FogColor", this.currentData.fogColor);
+            fogRenderer.sharedMaterial.SetFloat("_Y", currentData.fogY);
+            fogRenderer.sharedMaterial.SetColor("_FogColor", currentData.fogColor);
+            previousFogY = currentData.fogY;
         }
     }
 
     public virtual void ApplyNearestMoodBoxIfDesired()
     {
-        if (this.applyNearestMoodBox)
+        if (applyNearestMoodBox)
         {
             Component[] boxes = null;
-            boxes = this.GetComponentsInChildren(typeof(MoodBox)); // as MoodBox[];
+            boxes = GetComponentsInChildren<MoodBox>(); // as MoodBox[];
             if (boxes != null)
             {
                 Vector3 cameraPos = Camera.main.transform.position;
@@ -131,7 +155,7 @@ public partial class MoodBoxManager : MonoBehaviour
             {
                 Debug.Log("no MoodBox components found ...");
             }
-            this.applyNearestMoodBox = false;
+            applyNearestMoodBox = false;
         }
     }
 

@@ -57,14 +57,14 @@ public partial class GlowPlane : MonoBehaviour
         enabled = false;
     }
 
-    public virtual void Update()
+    public virtual void Update()    /**/
     {
         Vector3 vec = pos - playerTransform.position;
         vec.y = 0f;
         float distance = vec.magnitude;
-        transform.localScale = Vector3.Lerp(Vector3.one * minGlow, scale, Mathf.Clamp01(distance * 0.35f));
+        transform.localScale = Vector3.Lerp(Vector3.one * minGlow, scale, Mathf.Clamp01(distance * 0.35f));      // Cambio de escala del plano Glow por distancia.
         //mat.SetColor("_TintColor", glowColor * Mathf.Clamp(distance * 0.1f, minGlow, maxGlow)); // Legacy Material - Shader
-        mat.SetColor("_EmissionColor", glowColor * Mathf.Clamp(distance * 0.1f, minGlow, maxGlow));
+        mat.SetColor("_EmissionColor", glowColor * Mathf.Clamp(distance * 0.1f, minGlow, maxGlow));     // Cambio de la potencia de la emision del color por distancia..
     }
 
 }
